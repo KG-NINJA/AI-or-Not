@@ -215,20 +215,25 @@
   </main>
 
   <script>
-    const notSuitableKeywords = ["毎回同じ", "完全一致", "正確な計算", "自動処理", "ミスが許されない", "厳密", "固定", "ルール通り", "削除", "消去"];
+    const notSuitableKeywords = ["毎回同じ", "完全一致", "正確な計算", "自動処理", "ミスが許されない", "厳密", "固定", "ルール通り", "削除", "消去", "自動化", "バッチ", "スクリプト", "定期"];
     const suitableKeywords = ["考えたい", "アイデア", "整理したい", "言語化", "比較したい", "相談", "迷う", "方向性", "もやもや"];
+    const automationKeywords = ["自動処理", "自動化", "バッチ", "スクリプト", "定期", "ルール通り", "固定", "毎回同じ", "削除", "消去", "一括", "リネーム", "置換", "整理", "移動"];
 
     const reasonMap = {
       "毎回同じ": "出力の再現性が最優先と読み取れます。",
       "完全一致": "厳密一致が必要な処理はAIより決定的ツールが適します。",
       "正確な計算": "計算精度が主目的のためAIは不向きです。",
       "自動処理": "無人実行を想定しており、誤差許容が低い可能性があります。",
+      "自動化": "決められた手順の自動化が目的と読み取れます。",
       "ミスが許されない": "失敗コストが高く、人間の検証が必須です。",
       "厳密": "厳密性を求める要求が見られます。",
       "固定": "固定ルールでの処理が必要と判断できます。",
       "ルール通り": "決められた手順の忠実実行が中心です。",
       "削除": "削除自体をAIに委ねることがリスクです。",
       "消去": "取り消せない操作が含まれる可能性があります。",
+      "バッチ": "定型処理の連続実行が前提と判断できます。",
+      "スクリプト": "コードでの自動化が適している可能性があります。",
+      "定期": "定期実行は決定的な仕組みが向きます。",
       "考えたい": "整理・思考の補助が主目的と読み取れます。",
       "アイデア": "発散や候補出しにAIが有効です。",
       "整理したい": "構造化や要点抽出にAIが使えます。",
@@ -246,8 +251,17 @@
 
     const matchKeywords = (text, keywords) => keywords.filter((word) => text.includes(word));
     const buildReasons = (matches) => matches.map((word) => `「${word}」: ${reasonMap[word] || "該当する意図が見られます。"}`);
+    const hasDeletion = (text) => text.includes("削除") || text.includes("消去");
+    const buildAutomationAdvice = () => `
+      <p><strong>AI以外の自動化候補</strong></p>
+      <ul>
+        <li>Python: 条件分岐やログ出力を含む安全な自動化</li>
+        <li>シェル: ルール通りの一括処理や定期実行</li>
+        <li>Excel/スプレッドシート: 一覧管理と検証付き処理</li>
+      </ul>
+    `;
 
-    const renderNotSuitable = (matches, reasons) => {
+    const renderNotSuitable = (matches, reasons, automationMatches, deletionRisk) => {
       result.innerHTML = `
         <span class="tag">判定</span>
         <h2>判定結果：AIは適していません</h2>
@@ -256,11 +270,13 @@
         <ul>
           ${reasons.map((reason) => `<li>${reason}</li>`).join("")}
         </ul>
+        ${automationMatches.length ? buildAutomationAdvice() : ""}
+        ${deletionRisk ? "<p class=\"warning\">削除・消去は取り消しが難しいため、必ず事前に一覧確認とバックアップを行ってください。</p>" : ""}
         <p class="muted">同じ入力に同じ出力を求める場合、AIは最適解ではありません。</p>
       `;
     };
 
-    const renderSuitable = (withWarning, suitableMatches, notMatches, suitableReasons, notReasons) => {
+    const renderSuitable = (withWarning, suitableMatches, notMatches, suitableReasons, notReasons, automationMatches, deletionRisk) => {
       result.innerHTML = `
         <span class="tag">判定</span>
         <h2>判定結果：AIの利用が適しています</h2>
@@ -272,6 +288,8 @@
         ${withWarning ? "<p class=\"warning\">ただし、正確さや自動処理の要求がある場合は注意が必要です。</p>" : ""}
         ${withWarning ? `<p class="muted">注意が必要な条件：${notMatches.join(" / ")}</p>` : ""}
         ${withWarning ? `<ul>${notReasons.map((reason) => `<li>${reason}</li>`).join("")}</ul>` : ""}
+        ${withWarning && automationMatches.length ? buildAutomationAdvice() : ""}
+        ${withWarning && deletionRisk ? "<p class=\"warning\">削除・消去は取り消しが難しいため、必ず事前に一覧確認とバックアップを行ってください。</p>" : ""}
         <p><strong>プロンプト作成ガイド（例）</strong></p>
         <ul>
           <li>前提条件を箇条書きで明示する</li>
@@ -282,7 +300,7 @@
       `;
     };
 
-    const renderCaution = (matches, reasons) => {
+    const renderCaution = (matches, reasons, automationMatches, deletionRisk) => {
       result.innerHTML = `
         <span class="tag">判定</span>
         <h2>判定結果：AIは条件付きで注意が必要です</h2>
@@ -291,6 +309,8 @@
         <ul>
           ${reasons.map((reason) => `<li>${reason}</li>`).join("")}
         </ul>
+        ${automationMatches.length ? buildAutomationAdvice() : ""}
+        ${deletionRisk ? "<p class=\"warning\">削除・消去は取り消しが難しいため、必ず事前に一覧確認とバックアップを行ってください。</p>" : ""}
         <p class="warning">重要な判断や確定値の出力は、人間側で必ず検証してください。</p>
       `;
     };
@@ -317,23 +337,25 @@
 
       const notMatches = matchKeywords(text, notSuitableKeywords);
       const suitableMatches = matchKeywords(text, suitableKeywords);
+      const automationMatches = matchKeywords(text, automationKeywords);
       const notReasons = buildReasons(notMatches);
       const suitableReasons = buildReasons(suitableMatches);
+      const deletionRisk = hasDeletion(text);
       const hasNotSuitable = notMatches.length > 0;
       const hasSuitable = suitableMatches.length > 0;
 
       if (hasSuitable) {
-        renderSuitable(hasNotSuitable, suitableMatches, notMatches, suitableReasons, notReasons);
+        renderSuitable(hasNotSuitable, suitableMatches, notMatches, suitableReasons, notReasons, automationMatches, deletionRisk);
         return;
       }
 
       if (hasNotSuitable && notMatches.length === 1) {
-        renderCaution(notMatches, notReasons);
+        renderCaution(notMatches, notReasons, automationMatches, deletionRisk);
         return;
       }
 
       if (hasNotSuitable) {
-        renderNotSuitable(notMatches, notReasons);
+        renderNotSuitable(notMatches, notReasons, automationMatches, deletionRisk);
         return;
       }
 
