@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI適性チェック</title>
+  <style>
+    :root {
+      --ink: #1d1a16;
+      --paper: #f6f1e8;
+      --accent: #0f6b5d;
+      --accent-2: #b75b2a;
+      --line: #d9cbb7;
+      --soft: #fff8ee;
+      --shadow: rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", "MS PMincho", "Garamond", serif;
+      background: radial-gradient(1200px 600px at 10% 10%, #fff8ef, transparent),
+                  radial-gradient(900px 500px at 90% 20%, #efe2cf, transparent),
+                  var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 18px 48px;
+    }
+
+    .app {
+      width: min(720px, 100%);
+      background: var(--soft);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 60px var(--shadow);
+      border-radius: 18px;
+      padding: 28px 26px 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(135deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02) 2px, transparent 2px, transparent 6px);
+      pointer-events: none;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin: 0;
+      letter-spacing: 0.06em;
+    }
+
+    .sub {
+      font-size: 13px;
+      color: #5f4f3d;
+      letter-spacing: 0.08em;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 10px;
+      letter-spacing: 0.04em;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fffaf3;
+      padding: 14px 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 107, 93, 0.18);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 22px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #ffffff;
+      background: linear-gradient(120deg, #0f6b5d, #0a4b43);
+      box-shadow: 0 10px 18px rgba(15, 107, 93, 0.22);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px rgba(15, 107, 93, 0.25);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 8px 16px rgba(15, 107, 93, 0.2);
+    }
+
+    .result {
+      margin-top: 22px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      padding: 18px 18px 16px;
+      background: #ffffff;
+      position: relative;
+      z-index: 1;
+    }
+
+    .result h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: 0.06em;
+    }
+
+    .result p {
+      margin: 8px 0;
+      line-height: 1.65;
+      font-size: 14.5px;
+    }
+
+    .result ul {
+      padding-left: 18px;
+      margin: 8px 0 0;
+      font-size: 14.5px;
+      line-height: 1.7;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      background: rgba(183, 91, 42, 0.14);
+      color: var(--accent-2);
+      margin-bottom: 10px;
+    }
+
+    .warning {
+      color: #8a3d18;
+      font-weight: 600;
+    }
+
+    .muted {
+      color: #6a5b4c;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <header>
+      <h1>AI利用適性チェック</h1>
+      <div class="sub">迷ったら、まず言語化</div>
+    </header>
+
+    <label for="input">困りごと・やりたいことを自由に書いてください</label>
+    <textarea id="input" placeholder="例：資料の方向性を整理したい、比較ポイントを洗い出したい など"></textarea>
+
+    <div class="actions">
+      <button id="judge" type="button">判定する</button>
+    </div>
+
+    <section id="result" class="result">
+      <span class="tag">案内</span>
+      <h2>ここに判定結果が表示されます</h2>
+      <p class="muted">入力内容を確認し、AIに向いているかどうかを慎重に判断します。</p>
+    </section>
+  </main>
+
+  <script>
+    const notSuitableKeywords = ["毎回同じ", "完全一致", "正確な計算", "自動処理", "ミスが許されない", "厳密", "固定", "ルール通り", "削除", "消去"];
+    const suitableKeywords = ["考えたい", "アイデア", "整理したい", "言語化", "比較したい", "相談", "迷う", "方向性", "もやもや"];
+
+    const reasonMap = {
+      "毎回同じ": "出力の再現性が最優先と読み取れます。",
+      "完全一致": "厳密一致が必要な処理はAIより決定的ツールが適します。",
+      "正確な計算": "計算精度が主目的のためAIは不向きです。",
+      "自動処理": "無人実行を想定しており、誤差許容が低い可能性があります。",
+      "ミスが許されない": "失敗コストが高く、人間の検証が必須です。",
+      "厳密": "厳密性を求める要求が見られます。",
+      "固定": "固定ルールでの処理が必要と判断できます。",
+      "ルール通り": "決められた手順の忠実実行が中心です。",
+      "削除": "削除自体をAIに委ねることがリスクです。",
+      "消去": "取り消せない操作が含まれる可能性があります。",
+      "考えたい": "整理・思考の補助が主目的と読み取れます。",
+      "アイデア": "発散や候補出しにAIが有効です。",
+      "整理したい": "構造化や要点抽出にAIが使えます。",
+      "言語化": "曖昧な考えを言語化する用途に向きます。",
+      "比較したい": "観点整理や比較軸の提示に適しています。",
+      "相談": "壁打ち的な用途が想定されます。",
+      "迷う": "判断材料の整理支援が有効です。",
+      "方向性": "方向性の仮説出しに向きます。",
+      "もやもや": "曖昧さの整理が目的と読み取れます。"
+    };
+
+    const result = document.getElementById("result");
+    const input = document.getElementById("input");
+    const judge = document.getElementById("judge");
+
+    const matchKeywords = (text, keywords) => keywords.filter((word) => text.includes(word));
+    const buildReasons = (matches) => matches.map((word) => `「${word}」: ${reasonMap[word] || "該当する意図が見られます。"}`);
+
+    const renderNotSuitable = (matches, reasons) => {
+      result.innerHTML = `
+        <span class="tag">判定</span>
+        <h2>判定結果：AIは適していません</h2>
+        <p>正確さや再現性が強く求められる場合は、PythonやExcelのような決定的なツールが適しています。</p>
+        <p class="muted">検出された条件：${matches.join(" / ")}</p>
+        <ul>
+          ${reasons.map((reason) => `<li>${reason}</li>`).join("")}
+        </ul>
+        <p class="muted">同じ入力に同じ出力を求める場合、AIは最適解ではありません。</p>
+      `;
+    };
+
+    const renderSuitable = (withWarning, suitableMatches, notMatches, suitableReasons, notReasons) => {
+      result.innerHTML = `
+        <span class="tag">判定</span>
+        <h2>判定結果：AIの利用が適しています</h2>
+        <p>AIは答えを出す機械ではなく、考えを広げるための相棒として使うのが安全です。</p>
+        <p class="muted">検出された条件：${suitableMatches.join(" / ")}</p>
+        <ul>
+          ${suitableReasons.map((reason) => `<li>${reason}</li>`).join("")}
+        </ul>
+        ${withWarning ? "<p class=\"warning\">ただし、正確さや自動処理の要求がある場合は注意が必要です。</p>" : ""}
+        ${withWarning ? `<p class="muted">注意が必要な条件：${notMatches.join(" / ")}</p>` : ""}
+        ${withWarning ? `<ul>${notReasons.map((reason) => `<li>${reason}</li>`).join("")}</ul>` : ""}
+        <p><strong>プロンプト作成ガイド（例）</strong></p>
+        <ul>
+          <li>前提条件を箇条書きで明示する</li>
+          <li>「決めてほしい」ではなく「選択肢を出してほしい」と書く</li>
+          <li>最終判断は人間が行うと明記する</li>
+        </ul>
+        <p class="muted">このガイドはプロンプトそのものではありません。</p>
+      `;
+    };
+
+    const renderCaution = (matches, reasons) => {
+      result.innerHTML = `
+        <span class="tag">判定</span>
+        <h2>判定結果：AIは条件付きで注意が必要です</h2>
+        <p>一部はAIが整理に役立ちますが、最終結果を機械任せにしない設計が必要です。</p>
+        <p class="muted">検出された条件：${matches.join(" / ")}</p>
+        <ul>
+          ${reasons.map((reason) => `<li>${reason}</li>`).join("")}
+        </ul>
+        <p class="warning">重要な判断や確定値の出力は、人間側で必ず検証してください。</p>
+      `;
+    };
+
+    const renderUnknown = () => {
+      result.innerHTML = `
+        <span class="tag">判定</span>
+        <h2>判定結果：情報不足です</h2>
+        <p>目的の種類が読み取れませんでした。作業の「目的」と「求める精度」を追記してください。</p>
+        <p class="muted">例：方向性の整理なのか、完全一致の処理なのか。</p>
+      `;
+    };
+
+    judge.addEventListener("click", () => {
+      const text = input.value.trim();
+      if (!text) {
+        result.innerHTML = `
+          <span class="tag">判定</span>
+          <h2>入力がありません</h2>
+          <p class="muted">内容を記入してから判定してください。</p>
+        `;
+        return;
+      }
+
+      const notMatches = matchKeywords(text, notSuitableKeywords);
+      const suitableMatches = matchKeywords(text, suitableKeywords);
+      const notReasons = buildReasons(notMatches);
+      const suitableReasons = buildReasons(suitableMatches);
+      const hasNotSuitable = notMatches.length > 0;
+      const hasSuitable = suitableMatches.length > 0;
+
+      if (hasSuitable) {
+        renderSuitable(hasNotSuitable, suitableMatches, notMatches, suitableReasons, notReasons);
+        return;
+      }
+
+      if (hasNotSuitable && notMatches.length === 1) {
+        renderCaution(notMatches, notReasons);
+        return;
+      }
+
+      if (hasNotSuitable) {
+        renderNotSuitable(notMatches, notReasons);
+        return;
+      }
+
+      renderUnknown();
+    });
+  </script>
+</body>
+</html>
